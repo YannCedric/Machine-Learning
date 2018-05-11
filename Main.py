@@ -10,7 +10,7 @@ def _init(pop_size, dna_size):
     for i in range(pop_size):
         new_dna = []
         for j in range(dna_size):
-            new_dna.append(randint(0,5))
+            new_dna.append(randint(0,4))
         poputation.append(new_dna)
     return poputation
 
@@ -35,21 +35,31 @@ def _fitness(dna, goal):
 
 # select the better ones
 # population => best maybe (parents)
-def compute_probability(number):
-    if 0 <= number & number < 10 :
+def compute_probability(fitness):
+    if 0 <= fitness & fitness < 10 :
         return 10
-    if 10 <= number & number < 20 :
+    if 10 <= fitness & fitness < 20 :
         return 20
-    if 20 <= number & number < 30 :
+    if 20 <= fitness & fitness < 30 :
         return 30
-    if 30 <= number & number < 40 :
+    if 30 <= fitness & fitness < 40 :
         return 40
+
+def compute_random_probability(num):
+    num = randint(0,100)
+
+    if 0 <= num & num < 10 :
+        return 10
+    if 10 <= num & num < 80 :
+        return 70
+    if 80 <= num & num < 100 :
+        return 20
 
 def add_or_not(fitness):
     num = randint(0,100)
 
-    fitness_prob = compute_probability(fitness)
-    random_prob = compute_probability(num)
+    random_prob= compute_random_probability(num)
+    fitness_prob = compute_random_probability(fitness)
 
     return fitness_prob == random_prob
 
@@ -60,9 +70,7 @@ def _selection(population, goal):
         fit = _fitness(person,goal)
         if add_or_not(fit):
             next_parents.append(person)
-        if len(next_parents) == len(population):
-            return next_parents
-
+        
     return next_parents
 
 # crossover 
@@ -89,7 +97,7 @@ def mutation_rate(population_length):
     return (1/population_length) * 100
 
 def genererate_mutant():
-    return randint(0,100)
+    return randint(0,4)
 
 def _mutate(offsprings, rate):
     mutants = offsprings[:]
@@ -114,17 +122,18 @@ def _mutate(offsprings, rate):
 #win.close()
 
 ## START
-GOAL = [1,1,1,1,1,1,1]
-MUTATION_RATE = 50 # 10-20-30 or 40 %
+GOAL = [1,1,1,1,1,1,1,1,1,1,1,1]
+MUTATION_RATE = 10 # 10-20-30 or 40 %
 
-poputation = _init(4,(len(GOAL)))
+poputation = _init(10,(len(GOAL)))
 
-for i in range(0,10) :
+for i in range(0,100) :
+    print("Generation ",i)
     print("Population ->",poputation)
 
     selected = _selection(poputation, GOAL)
 
-    #print(selected)
+    print("Selected - - > ",selected)
 
     offsprings = _crossover(selected)
 
@@ -135,5 +144,3 @@ for i in range(0,10) :
     #print(new_population)
 
     poputation = new_population
-
-    print("Generation ",i)
