@@ -1,16 +1,23 @@
+# -*- coding: utf-8 -*-
 from graphics import *
 from random import randint
+import math
 
 # win = GraphWin("Learner",500,300)
 
 # init pop
+def create_person():
+    num = randint(0,4)
+    return num
+
 def _init(pop_size, dna_size):
     poputation = []
 
     for i in range(pop_size):
         new_dna = []
         for j in range(dna_size):
-            new_dna.append(randint(0,4))
+            new_person = create_person()
+            new_dna.append(new_person)
         poputation.append(new_dna)
     return poputation
 
@@ -29,48 +36,40 @@ def _fitness(dna, goal):
             if dna[i] == goal[i]:
                 score = score + 1
 
-        return (int) (score/len(goal) * 100)
+        return (score/len(goal) * 100)
     else:
         return -1
 
 # select the better ones
 # population => best maybe (parents)
-def compute_probability(fitness):
-    if 0 <= fitness & fitness < 10 :
-        return 10
-    if 10 <= fitness & fitness < 20 :
-        return 20
-    if 20 <= fitness & fitness < 30 :
-        return 30
-    if 30 <= fitness & fitness < 40 :
-        return 40
 
-def compute_random_probability(num):
-    num = randint(0,100)
+def add_or_not(fitness, maxFitness):
+    num = randint(0,maxFitness)
+    return num <= fitness
 
-    if 0 <= num & num < 10 :
-        return 10
-    if 10 <= num & num < 80 :
-        return 70
-    if 80 <= num & num < 100 :
-        return 20
+def compute_fitnesses(population, goal):
+    best_fitness = 0
+    population_with_fitness = []
 
-def add_or_not(fitness):
-    num = randint(0,100)
-
-    random_prob= compute_random_probability(num)
-    fitness_prob = compute_random_probability(fitness)
-
-    return fitness_prob == random_prob
-
-def _selection(population, goal):
-    next_parents =  []
-    
     for person in population:
-        fit = _fitness(person,goal)
-        if add_or_not(fit):
-            next_parents.append(person)
-        
+        count = 0.0
+        for i in range(len(person)):
+            if person[i] == goal[i]: 
+                count = count+1
+        fitness = math.floor(count/len(goal) * 100)
+        population_with_fitness.append([person,fitness])
+        if best_fitness < fitness:
+            best_fitness = fitness
+    return population_with_fitness,best_fitness
+
+def _selection(population_with_fitness, maxFitness):
+    next_parents =  []
+
+    for person in population_with_fitness:
+        fit = person[1]
+        if add_or_not(fit, maxFitness):
+            next_parents.append(person[0])
+
     return next_parents
 
 # crossover 
@@ -78,41 +77,47 @@ def _selection(population, goal):
 def _crossover(parents): 
     next_generation = []
 
-    for index in range(len(parents)):
+    for index in range(len(parents)/2):
         parent1  = parents[index] 
         parent2  = parents[-index-1] 
-        new_child = []
+        new_child1 = []
+        new_child2 = []
         for i in range(len(parent1)):
-            if i%2 == 0: new_child.append(parent1[i])
-            else: new_child.append(parent2[i])
-
-        next_generation.append(new_child)
-    if len(next_generation) == len(parents):
-        return next_generation
+            if i%2 == 0: 
+                new_child1.append(parent1[i])
+                new_child2.append(parent2[i])
+            else: 
+                new_child1.append(parent2[i])
+                new_child2.append(parent1[i])
+        next_generation.append(new_child1)
+        next_generation.append(new_child2)
+        if len(next_generation) >= len(parents):
+            return next_generation
 
     return next_generation
 
 # mutate new population
-def mutation_rate(population_length):
-    return (1/population_length) * 100
 
-def genererate_mutant():
-    return randint(0,4)
 
-def _mutate(offsprings, rate):
-    mutants = offsprings[:]
+def mutate(person, mutation_rate):
+    mutated = 0
+    mutant = []
+    for i in person: 
+        if randint(0,100) < mutation_rate:
+            mutated = mutated + 1
+            mutant.append(create_person())
+        else:
+            mutant.append(i)
+
+    if mutated != 0:        
+        print "Mutation: ", person , "-->", mutant
+    return mutant
+
+def _mutate_all(offsprings, rate):
+    mutants = []
     
-    for i in range(len(offsprings)):
-        offspring = offsprings[i]
-
-        for j in range(len(offspring)):
-            chance = compute_probability(randint(0,100))
-            # print("Chance ", chance)
-            if chance == rate :
-                mutants[i][j] = genererate_mutant()
-                print("Mutated")
-                print(offspring)                
-                print(mutants[i])
+    for offspring in offsprings:
+        mutants.append(mutate(offspring, rate))
 
     return mutants
     
@@ -122,25 +127,38 @@ def _mutate(offsprings, rate):
 #win.close()
 
 ## START
-GOAL = [1,1,1,1,1,1,1,1,1,1,1,1]
-MUTATION_RATE = 10 # 10-20-30 or 40 %
+GOAL = [1,2,3,4]
+MUTATION_RATE = 0.1
 
-poputation = _init(10,(len(GOAL)))
+poputation = _init(6,(len(GOAL)))
+max_fitness = 0
+counter = 0
+while max_fitness <= 70:
+    counter = counter + 1
 
-for i in range(0,100) :
-    print("Generation ",i)
-    print("Population ->",poputation)
+    print 
+    print "Generation ", counter ,"->",poputation
 
-    selected = _selection(poputation, GOAL)
+    population_with_fitness , max_fitness = compute_fitnesses(poputation, GOAL)
 
-    print("Selected - - > ",selected)
+    print "Max fitness : " , max_fitness
+
+    selected = _selection(population_with_fitness, max_fitness)
+
+    print "Selected - - > ",selected
 
     offsprings = _crossover(selected)
 
-    mutants = _mutate(offsprings, MUTATION_RATE)
+    print "OffSpring" ,offsprings
+
+    mutants = _mutate_all(offsprings, MUTATION_RATE)
 
     new_population = selected + mutants
 
-    #print(new_population)
-
     poputation = new_population
+
+print "Done"
+
+for person in population_with_fitness:
+    if person[1] == max_fitness:
+        print "Fittest: -> " ,  person[0]
