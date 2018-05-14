@@ -3,8 +3,6 @@ from graphics import *
 from random import randint
 import math
 
-# win = GraphWin("Learner",500,300)
-
 # init pop
 def create_person():
     num = randint(0,4)
@@ -47,19 +45,24 @@ def add_or_not(fitness, maxFitness):
     num = randint(0,maxFitness)
     return num <= fitness
 
+def fitness(person,goal):
+    count = 0.0
+    for i in range(len(person)):
+            if person[i] == goal[i]: 
+                count = count+1
+
+    fitness_score = math.floor(count/len(goal) * 100)
+    return fitness_score
+
 def compute_fitnesses(population, goal):
     best_fitness = 0
     population_with_fitness = []
 
     for person in population:
-        count = 0.0
-        for i in range(len(person)):
-            if person[i] == goal[i]: 
-                count = count+1
-        fitness = math.floor(count/len(goal) * 100)
-        population_with_fitness.append([person,fitness])
-        if best_fitness < fitness:
-            best_fitness = fitness
+        fit = fitness(person,goal)
+        population_with_fitness.append([person,fit])
+        if best_fitness < fit:
+            best_fitness = fit
     return population_with_fitness,best_fitness
 
 def _selection(population_with_fitness, maxFitness):
@@ -120,45 +123,70 @@ def _mutate_all(offsprings, rate):
         mutants.append(mutate(offspring, rate))
 
     return mutants
-    
-# --> repeat
 
-#win.getMouse()
-#win.close()
+
+# Graph
+def arr_to_string(arr):
+    return ",".join(map(str,arr))
+
+win = GraphWin("Learner",500,300)
 
 ## START
-GOAL = [1,2,3,4]
+GOAL = [2,2,2,2,2,2,2,2,2,2,2]
 MUTATION_RATE = 0.1
+#graph
+goal_text = Text(Point(250,100),  arr_to_string(GOAL) )
+goal_text.setSize(20)
+goal_text.draw(win)
+
+fittest_text = Text(Point(250,200),  arr_to_string([]) )
+fittest_text.setSize(20)
+fittest_text.draw(win)
 
 poputation = _init(6,(len(GOAL)))
 max_fitness = 0
 counter = 0
-while max_fitness <= 70:
-    counter = counter + 1
+fittest = []
+fittest_text.setText(arr_to_string(fittest))
 
-    print 
-    print "Generation ", counter ,"->",poputation
+while max_fitness <= 90:
+    counter = counter + 1
 
     population_with_fitness , max_fitness = compute_fitnesses(poputation, GOAL)
 
-    print "Max fitness : " , max_fitness
 
     selected = _selection(population_with_fitness, max_fitness)
 
-    print "Selected - - > ",selected
+    #print "Selected - - > ",selected
 
     offsprings = _crossover(selected)
 
-    print "OffSpring" ,offsprings
+    #print "OffSpring" ,offsprings
 
     mutants = _mutate_all(offsprings, MUTATION_RATE)
 
     new_population = selected + mutants
 
+    print "Generation ", counter ,"->",poputation
+    
+    print "Max fitness : " , max_fitness
+
+    print "New population : ", new_population
+
     poputation = new_population
 
+    for person in population_with_fitness:
+        if person[1] == max_fitness:
+            fittest = person[0]
+
+    fittest_text.setText(arr_to_string(fittest))
 print "Done"
 
-for person in population_with_fitness:
-    if person[1] == max_fitness:
-        print "Fittest: -> " ,  person[0]
+print "Fittest : ", fittest
+
+
+
+
+
+win.getMouse()
+win.close()
